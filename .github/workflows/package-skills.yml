@@ -1,0 +1,35 @@
+name: Упаковать skills
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '.agents/skills/**'
+      - 'scripts/package-skills'
+      - '.github/workflows/package-skills.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Собрать skill bundles
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Упаковать skills
+        run: bash scripts/package-skills dist/skills
+
+      - name: Сохранить bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-skills
+          path: dist/skills/*
+          retention-days: 30
+          if-no-files-found: error

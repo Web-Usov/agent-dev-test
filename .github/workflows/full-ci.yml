@@ -1,0 +1,41 @@
+name: Полный CI
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: full-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  full-ci:
+    name: Полные проверки
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v6
+
+      - name: Запустить full CI
+        run: bash scripts/ci-full
+
+      - name: Собрать диагностику при ошибке
+        if: failure()
+        run: |
+          if [[ -f scripts/diagnostics ]]; then
+            bash scripts/diagnostics full-ci-diagnostics
+          fi
+
+      - name: Сохранить диагностический artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-ci-diagnostics-${{ github.run_id }}
+          path: full-ci-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 7

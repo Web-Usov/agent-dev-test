@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+out_dir="${1:-diagnostics}"
+mkdir -p "$out_dir"
+
+{
+  echo "# Диагностика"
+  echo
+  echo "Дата UTC: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  echo "Runner OS: ${RUNNER_OS:-unknown}"
+  echo "GitHub workflow: ${GITHUB_WORKFLOW:-unknown}"
+  echo "GitHub job: ${GITHUB_JOB:-unknown}"
+  echo "GitHub ref: ${GITHUB_REF:-unknown}"
+  echo "GitHub SHA: ${GITHUB_SHA:-unknown}"
+} > "$out_dir/context.md"
+
+{
+  echo "# Git"
+  git status --short || true
+  echo
+  git log -1 --oneline --decorate || true
+} > "$out_dir/git.txt"
+
+{
+  echo "# Структура репозитория"
+  find . -maxdepth 3 \
+    -not -path './.git*' \
+    -not -path './node_modules*' \
+    -not -path './diagnostics*' \
+    -print | sort
+} > "$out_dir/tree.txt"
+
+if [[ -f scripts/project-diagnostics ]]; then
+  echo "[INFO] Запуск project-specific diagnostics"
+  bash scripts/project-diagnostics "$out_dir"
+fi
+
+echo "[OK] Диагностика собрана в $out_dir"

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+root_dir="$(pwd)"
+out_dir="${1:-dist/skills}"
+
+if [[ "$out_dir" = /* ]]; then
+  out_abs="$out_dir"
+else
+  out_abs="$root_dir/$out_dir"
+fi
+
+if ! command -v zip >/dev/null 2>&1; then
+  echo "[ERROR] Для упаковки skills требуется утилита zip" >&2
+  exit 1
+fi
+
+checksum_sha256() {
+  local file="$1"
+
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$file" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$file" | awk '{print $1}'
+  else
+    echo "[ERROR] Для manifest требуется sha256sum или shasum" >&2
+    return 1
+  fi
+}
+
+rm -rf "$out_abs"
+mkdir -p "$out_abs"
+
+manifest="$out_abs/manifest.tsv"
+printf 'skill\tarchive\tsha256\n' > "$manifest"
+
+found=0
+for skill_dir in "$root_dir"/.agents/skills/*; do
+  [[ -d "$skill_dir" ]] || continue
+  [[ -f "$skill_dir/SKILL.md" ]] || continue
+
+  skill_name="$(basename "$skill_dir")"
+  archive="$out_abs/$skill_name.zip"
+
+  (
+    cd "$skill_dir"
+    zip -q -r "$archive" . \
+      -x '.DS_Store' \
+      -x '__MACOSX/*'
+  )
+
+  checksum="$(checksum_sha256 "$archive")"
+  printf '%s\t%s\t%s\n' "$skill_name" "$(basename "$archive")" "$checksum" >> "$manifest"
+  echo "[OK] Упакован skill: $skill_name → $archive"
+  found=1
+done
+
+if [[ "$found" -ne 1 ]]; then
+  echo "[ERROR] В .agents/skills не найдено ни одного SKILL.md" >&2
+  exit 1
+fi
+
+echo "[OK] Manifest: $manifest"

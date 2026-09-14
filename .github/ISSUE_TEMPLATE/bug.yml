@@ -1,0 +1,40 @@
+name: Ошибка
+description: Сообщить об ошибке и зафиксировать воспроизводимость
+title: "[Bug]: "
+labels: []
+body:
+  - type: textarea
+    id: actual
+    attributes:
+      label: Что происходит
+      description: Опишите фактическое поведение.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Что должно происходить
+      description: Опишите ожидаемое поведение.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Как воспроизвести
+      description: Минимальная последовательность действий, входные данные и условия.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Логи и диагностика
+      description: Приложите безопасные логи, ссылки на CI runs или другие доказательства. Не публикуйте secrets.
+  - type: textarea
+    id: scope
+    attributes:
+      label: Предполагаемый scope исправления
+      description: Если известен — какие части системы затронуты.

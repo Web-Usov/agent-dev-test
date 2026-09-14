@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fast-ci:
+    name: Быстрые проверки
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Получить код
+        uses: actions/checkout@v6
+
+      - name: Запустить fast CI
+        run: bash scripts/ci
+
+      - name: Собрать диагностику при ошибке
+        if: failure()
+        run: |
+          if [[ -f scripts/diagnostics ]]; then
+            bash scripts/diagnostics ci-diagnostics
+          fi
+
+      - name: Сохранить диагностический artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-diagnostics-${{ github.run_id }}
+          path: ci-diagnostics/
+          if-no-files-found: ignore
+          retention-days: 7

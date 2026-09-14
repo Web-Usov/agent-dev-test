@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+bash scripts/ci
+
+if [[ -f scripts/project-ci-full ]]; then
+  echo "[INFO] Запуск project-specific full CI"
+  bash scripts/project-ci-full
+else
+  echo "[INFO] scripts/project-ci-full не найден — дополнительных полных проверок нет"
+fi
+
+echo "[OK] Full CI завершён"
